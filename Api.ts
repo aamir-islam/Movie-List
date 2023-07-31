@@ -1,80 +1,101 @@
+import { ApiResponse, Movie } from "./styles/types";
+
 const API_KEY = "api_key=336ff2d06750b1a068e736a78e81d04f";
 const BASE_URL = "https://api.themoviedb.org/3";
-const API_URL = BASE_URL + "/discover/movie?sort_by=popularity.desc&" + API_KEY;
+const API_URL = `${BASE_URL}/discover/movie?sort_by=popularity.desc&${API_KEY}`;
 const IMG_URL = "https://image.tmdb.org/t/p/w500";
-const searchURL = BASE_URL + "/search/movie?" + API_KEY + "&query=";
+const searchURL = `${BASE_URL}/search/movie?${API_KEY}&query=`;
 
+const cardsDiv = document.querySelector(".cards")! as HTMLDivElement;
+const searchInput = document.querySelector(".form")! as HTMLFormElement;
+const searchBar = document.querySelector(".search-bar")! as HTMLInputElement;
+const main = document.querySelector(".two")! as HTMLDivElement;
 
+let resultNotFound = 0;
 
+const fetchMoviesList = (() => {
+  let timerId: ReturnType<typeof setTimeout>;
 
-const cardsDiv = document.querySelector(".cards") !as HTMLDivElement;
-const searchInput = document.querySelector(".form") !as HTMLFormElement ;
-const searchBar = document.querySelector(".search-bar") ! as HTMLInputElement ;
-const main = document.querySelector(".two") ! as HTMLDivElement ;
+  return async (query: string): Promise<void> => {
+    const url = searchURL + query;
 
-interface MovieInfo {
-  poster_path : string;
-  title : string;
-}
+    // Clear the previous timer, if any, before setting a new one
+    clearTimeout(timerId);
 
+    // Set a new timer to make the API call after 500 milliseconds (adjust as needed)
+    timerId = setTimeout(async () => {
+      await getMovieList(url);
+    }, 500); // Set the debounce delay for the API call, e.g., 500 milliseconds
+  };
+})();
 
-var temp = 0;
+// Event listener for the search bar
+searchBar.addEventListener("input", (e: Event) => {
+  const value = searchBar.value;
+  if (value) {
+    fetchMoviesList(value)
+      .then(() => {
+        // Handle success or other logic here
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      });
+  } else {
+    getMovieList(API_URL)
+      .then(() => {
+        // Handle success or other logic here
+        searchBar.value = "";
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      });
+  }
+});
 
-searchInput.addEventListener("submit", (e: Event) => {
-    e.preventDefault();
-    const value = searchBar.value;
-    if (value) {  
-      getMovie(searchURL + value); 
-
-    } else {
-      getMovie(API_URL);
-      searchBar.value = '' ;
-    }
-  });
-
-async function getMovie(url:string) {
+const getMovieList = async (url: string): Promise<void> => {
+  try {
     const res = await fetch(url);
-    const data = await res.json();
-    const result = data.results;
-    
-    if (result) {
-      showMovie(result);
+    const ApiResponse: ApiResponse = await res.json();
+    const { results, total_results } = ApiResponse;
+
+    if (total_results) {
+      showMovieList(results);
       main.style.display = "none";
-    }
-    if (result.length === 0) {    
-      main.style.display = "block"
-      const divDNF = document.createElement("div");
-      divDNF.classList.add("container");
-      divDNF.innerHTML = `
-      <h2>Sorry,there is no result for keyword you searched</h2>
-      <img src="bg.png" alt="background">
-      `;
-      if(temp === 0){
-        main.appendChild(divDNF);  
-        temp = 1;
+    } else {
+      main.style.display = "block";
+      if (resultNotFound === 0) {
+        const divDNF = document.createElement("div");
+        divDNF.classList.add("container");
+        divDNF.innerHTML = `
+          <h2>Sorry, there is no result for the keyword you searched</h2>
+          <img src="./img/bg.png" alt="background">
+        `;
+        main.appendChild(divDNF);
+        resultNotFound = 1;
       }
     }
+  } catch (error) {
+    console.error("Error fetching data:", error);
   }
-  
-  getMovie(API_URL);
-  function showMovie(data:any[] ) {
-    cardsDiv.innerHTML = "";
-    data.forEach((movie:any) => {
-      const { title, poster_path} = movie;
-      const cardDiv = document.createElement("div");
-      cardDiv.classList.add("card");
-      cardDiv.style.backgroundImage = `url(${
-        poster_path
-          ? IMG_URL + poster_path
-          : "http://via.placeholder.com/1080x1580"
-      })`;
-      cardDiv.innerHTML = `
-      <h3  id="title" >${title}</h3>
-      <button class="btn" > Read More </button>
-      `;
-      cardsDiv.appendChild(cardDiv);
-    });
-  }
+};
 
+getMovieList(API_URL);
 
-
+const showMovieList = (MoviesData: Movie[]): void => {
+  cardsDiv.innerHTML = "";
+  MoviesData.forEach((movie) => {
+    const { title, poster_path } = movie;
+    const cardDiv = document.createElement("div");
+    cardDiv.classList.add("card");
+    cardDiv.style.backgroundImage = `url(${
+      poster_path
+        ? IMG_URL + poster_path
+        : "http://via.placeholder.com/1080x1580"
+    })`;
+    cardDiv.innerHTML = `
+      <h3 id="title">${title}</h3>
+      <button class="btn">Read More</button>
+    `;
+    cardsDiv.appendChild(cardDiv);
+  });
+};
