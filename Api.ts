@@ -1,4 +1,11 @@
-import { ApiResponse, Movie } from "./styles/types";
+interface Movie {
+  poster_path: string;
+  title: string;
+}
+interface ApiResponse {
+  results: Movie[];
+  total_results: number;
+}
 
 const API_KEY = "api_key=336ff2d06750b1a068e736a78e81d04f";
 const BASE_URL = "https://api.themoviedb.org/3";
@@ -9,9 +16,7 @@ const searchURL = `${BASE_URL}/search/movie?${API_KEY}&query=`;
 const cardsDiv = document.querySelector(".cards")! as HTMLDivElement;
 const searchInput = document.querySelector(".form")! as HTMLFormElement;
 const searchBar = document.querySelector(".search-bar")! as HTMLInputElement;
-const main = document.querySelector(".two")! as HTMLDivElement;
-
-let resultNotFound = 0;
+const main = document.querySelector(".dataNoteFound")! as HTMLDivElement;
 
 const fetchMoviesList = (() => {
   let timerId: ReturnType<typeof setTimeout>;
@@ -60,19 +65,11 @@ const getMovieList = async (url: string): Promise<void> => {
 
     if (total_results) {
       showMovieList(results);
+      cardsDiv.style.display = "flex";
       main.style.display = "none";
     } else {
       main.style.display = "block";
-      if (resultNotFound === 0) {
-        const divDNF = document.createElement("div");
-        divDNF.classList.add("container");
-        divDNF.innerHTML = `
-          <h2>Sorry, there is no result for the keyword you searched</h2>
-          <img src="./img/bg.png" alt="background">
-        `;
-        main.appendChild(divDNF);
-        resultNotFound = 1;
-      }
+      cardsDiv.style.display = "none";
     }
   } catch (error) {
     console.error("Error fetching data:", error);
