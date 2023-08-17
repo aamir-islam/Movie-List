@@ -16,8 +16,7 @@ const searchURL = `${BASE_URL}/search/movie?${API_KEY}&query=`;
 const cardsDiv = document.querySelector(".cards");
 const searchInput = document.querySelector(".form");
 const searchBar = document.querySelector(".search-bar");
-const main = document.querySelector(".two");
-let resultNotFound = 0;
+const main = document.querySelector(".dataNoteFound");
 const fetchMoviesList = (() => {
     let timerId;
     return (query) => __awaiter(void 0, void 0, void 0, function* () {
@@ -60,20 +59,12 @@ const getMovieList = (url) => __awaiter(void 0, void 0, void 0, function* () {
         const { results, total_results } = ApiResponse;
         if (total_results) {
             showMovieList(results);
+            cardsDiv.style.display = "flex";
             main.style.display = "none";
         }
         else {
             main.style.display = "block";
-            if (resultNotFound === 0) {
-                const divDNF = document.createElement("div");
-                divDNF.classList.add("container");
-                divDNF.innerHTML = `
-          <h2>Sorry, there is no result for the keyword you searched</h2>
-          <img src="./img/bg.png" alt="background">
-        `;
-                main.appendChild(divDNF);
-                resultNotFound = 1;
-            }
+            cardsDiv.style.display = "none";
         }
     }
     catch (error) {
